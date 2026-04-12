@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+
+  <cover>
+    <title>Active Directory Security Homelab Portfolio</title>
+    <subtitle>Windows Server 2025 | Splunk SIEM | BloodHound CE | Sysmon</subtitle>
+    <author>Arturs Kaufmanis</author>
+    <role>Cybersecurity Professional | HyperionDev Bootcamp Graduate</role>
+    <institution>Manchester Metropolitan University</institution>
+    <year>2026</year>
+  </cover>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: EXECUTIVE SUMMARY                                 -->
+  <!-- ============================================================ -->
+
+  <section id="1" title="Executive Summary">
+    <p>This portfolio documents the design, implementation, and security hardening of a comprehensive Active Directory homelab environment. The project demonstrates enterprise-level cybersecurity skills including SIEM integration, attack path analysis, identity management, and security monitoring.</p>
+    <p>The lab was built to demonstrate practical competency in:</p>
+    <list>
+      <item>Active Directory deployment and security hardening</item>
+      <item>SIEM implementation using Splunk Enterprise</item>
+      <item>Endpoint detection using Sysmon and Splunk Add-on for Sysmon</item>
+      <item>Attack path visualization using BloodHound Community Edition</item>
+      <item>Local Administrator Password Solution (LAPS) deployment</item>
+      <item>PingCastle security assessment scoring</item>
+      <item>WSL2, Docker, and containerized security tools</item>
+    </list>
+
+    <subsection id="1.1" title="Lab Environment Summary">
+      <table name="lab_environment">
+        <row><component>Domain Controller</component><specification>Windows Server 2025 (Build 26100)</specification></row>
+        <row><component>Domain Name</component><specification>ADForest.local</specification></row>
+        <row><component>Forest/Domain Functional Level</component><specification>Windows Server 2016</specification></row>
+        <row><component>DC Hostname</component><specification>WIN-ESVD1CAD1FJ</specification></row>
+        <row><component>RAM</component><specification>24GB</specification></row>
+        <row><component>SIEM</component><specification>Splunk Enterprise 10.2 (Free)</specification></row>
+        <row><component>EDR</component><specification>Sysmon v15.15 with SwiftOnSecurity config</specification></row>
+        <row><component>Attack Path Tool</component><specification>BloodHound Community Edition (Docker)</specification></row>
+        <row><component>Container Platform</component><specification>Docker Engine on WSL2 Ubuntu 24.04</specification></row>
+        <row><component>Security Assessment</component><specification>PingCastle v3.x</specification></row>
+      </table>
+    </subsection>
+
+    <subsection id="1.2" title="PingCastle Score Progression">
+      <table name="pingcastle_scores">
+        <header>
+          <col>Session</col>
+          <col>Global Score</col>
+          <col>Privileged</col>
+          <col>Stale Objects</col>
+          <col>Anomaly</col>
+          <col>Trust</col>
+        </header>
+        <row><session>Baseline</session><global>60</global><privileged>40</privileged><stale>31</stale><anomaly>60</anomaly><trust>0</trust></row>
+        <row><session>Session 1 - Password/NTLMv1 fixes</session><global>50</global><privileged>0</privileged><stale>21</stale><anomaly>50</anomaly><trust>0</trust></row>
+        <row><session>Session 2 - Backup/Audit fixes</session><global>35</global><privileged>0</privileged><stale>21</stale><anomaly>35</anomaly><trust>0</trust></row>
+        <row><session>Session 3 - LAPS/AES/SecAdmin</session><global>21</global><privileged>20</privileged><stale>21</stale><anomaly>20</anomaly><trust>0</trust></row>
+        <row><session>Final - Schema Admins/Backup</session><global>20</global><privileged>20</privileged><stale>20</stale><anomaly>20</anomaly><trust>0</trust></row>
+      </table>
+      <note>67% improvement from baseline score of 60 to final score of 20. Remaining findings are lab limitations (single DC, BreakGlass used within 60 days).</note>
+    </subsection>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: PHASE 1 - ACTIVE DIRECTORY DEPLOYMENT & BASELINE  -->
+  <!-- ============================================================ -->
+
+  <section id="2" title="Phase 1 - Active Directory Deployment and Baseline">
+
+    <subsection id="2.1" title="Initial Setup">
+      <p>Windows Server 2025 was installed and configured as a Domain Controller for the ADForest.local domain. The following roles were installed:</p>
+      <list>
+        <item>Active Directory Domain Services (AD DS)</item>
+        <item>DNS Server</item>
+        <item>Group Policy Management</item>
+      </list>
+    </subsection>
+
+    <subsection id="2.2" title="Baseline PingCastle Assessment">
+      <p>PingCastle was used to establish a security baseline. Initial scan revealed a global score of 60 with multiple critical findings:</p>
+      <table name="baseline_findings">
+        <header>
+          <col>Finding</col>
+          <col>Points</col>
+          <col>Description</col>
+        </header>
+        <row><finding>S-OldNtlm</finding><points>15</points><description>NTLMv1 authentication enabled</description></row>
+        <row><finding>A-LAPS-Not-Installed</finding><points>15</points><description>Local Admin Password Solution not deployed</description></row>
+        <row><finding>A-AuditDC</finding><points>10</points><description>Insufficient audit policy on Domain Controllers</description></row>
+        <row><finding>MachineAccountQuota</finding><points>10</points><description>Default quota allows any user to join computers to domain</description></row>
+        <row><finding>Schema Admins not empty</finding><points>10</points><description>Administrator in Schema Admins group</description></row>
+        <row><finding>A-HardenedPaths</finding><points>5</points><description>Hardened UNC paths not configured</description></row>
+        <row><finding>A-NotEnoughDC</finding><points>5</points><description>Single Domain Controller - no redundancy</description></row>
+        <row><finding>S-DC-SubnetMissing</finding><points>5</points><description>DC subnets not declared in AD Sites and Services</description></row>
+        <row><finding>S-PwdNeverExpires</finding><points>1</points><description>Accounts with non-expiring passwords</description></row>
+      </table>
+    </subsection>
+
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: PHASE 2 - SECURITY HARDENING                      -->
+  <!-- ============================================================ -->
+
+  <section id="3" title="Phase 2 - Security Hardening">
+
+    <subsection id="3.1" title="Password Policy">
+      <p>Default password policy was strengthened to meet enterprise standards:</p>
+      <command>Set-ADDefaultDomainPasswordPolicy -Identity 'ADForest.local' -MinPasswordLength 12</command>
+      <result>Minimum password length increased from 7 to 12 characters.</result>
+    </subsection>
+
+    <subsection id="3.2" title="AD Recycle Bin">
+      <p>Enabled AD Recycle Bin to allow recovery of accidentally deleted objects:</p>
+      <command>Enable-ADOptionalFeature -Identity 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target 'ADForest.local' -Confirm:$false</command>
+      <result>Deleted AD objects can now be recovered within 180 days (tombstone lifetime).</result>
+    </subsection>
+
+    <subsection id="3.3" title="MachineAccountQuota">
+      <p>By default, any domain user can join up to 10 computers to the domain. This was disabled to prevent unauthorized domain joins:</p>
+      <command>Set-ADDomain -Identity 'ADForest.local' -Replace @{'ms-DS-MachineAccountQuota'='0'}</command>
+      <result>Only administrators can now join computers to the domain, preventing unauthorized device registration.</result>
+    </subsection>
+
+    <subsection id="3.4" title="Schema Admins Cleanup">
+      <p>The built-in Administrator account was removed from Schema Admins. Schema Admins is one of the most powerful groups in AD - members can make irreversible forest-wide schema modifications:</p>
+      <command>Remove-ADGroupMember -Identity 'Schema Admins' -Members 'Administrator' -Confirm:$false</command>
+      <best_practice>Schema Admins must be empty at all times except during planned schema modifications. Members are only added temporarily and removed immediately after.</best_practice>
+    </subsection>
+
+    <subsection id="3.5" title="Account Delegation Protection">
+      <p>The Administrator account was protected against Kerberos delegation attacks:</p>
+      <command>Set-ADUser -Identity 'Administrator' -AccountNotDelegated $true</command>
+      <result>Prevents attackers from using delegation to impersonate the Administrator account.</result>
+    </subsection>
+
+    <subsection id="3.6" title="NTLMv1 Disabled">
+      <p>NTLMv1 is a legacy and insecure authentication protocol. It was disabled via both registry and GPO:</p>
+      <command>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name 'LmCompatibilityLevel' -Value 5</command>
+      <command>Set-GPRegistryValue -Name 'Default Domain Controllers Policy' -Key 'HKLM\SYSTEM\CurrentControlSet\Control\Lsa' -ValueName 'LmCompatibilityLevel' -Type DWord -Value 5</command>
+      <note>LmCompatibilityLevel 5 = Only NTLMv2 responses are sent. NTLMv1 and LM are refused.</note>
+    </subsection>
+
+    <subsection id="3.7" title="Audit Policy">
+      <p>Comprehensive audit policy was configured to capture all security-relevant events:</p>
+      <table name="audit_policy">
+        <header>
+          <col>Audit Category</col>
+          <col>Setting</col>
+        </header>
+        <row><category>Credential Validation</category><setting>Success and Failure</setting></row>
+        <row><category>User Account Management</category><setting>Success and Failure</setting></row>
+        <row><category>Security Group Management</category><setting>Success and Failure</setting></row>
+        <row><category>Logon Events</category><setting>Success and Failure</setting></row>
+        <row><category>Logoff Events</category><setting>Success</setting></row>
+        <row><category>Sensitive Privilege Use</category><setting>Success and Failure</setting></row>
+        <row><category>Audit Policy Change</category><setting>Success and Failure</setting></row>
+        <row><category>Process Creation (4688)</category><setting>Success</setting></row>
+        <row><category>Directory Service Changes</category><setting>Success and Failure</setting></row>
+      </table>
+    </subsection>
+
+    <subsection id="3.8" title="AD Backup">
+      <p>Windows Server Backup was installed and a system state backup was configured:</p>
+      <command>Install-WindowsFeature -Name Windows-Server-Backup</command>
+      <command># Create VHD for backup storage</command>
+      <command>diskpart /s backup_script.txt  # Creates 30GB VHD mounted as E:</command>
+      <command>wbadmin start systemstatebackup -backupTarget:E: -quiet</command>
+      <result>System state backup completed successfully, covering AD database, SYSVOL, and registry.</result>
+    </subsection>
+
+    <subsection id="3.9" title="AES Encryption">
+      <p>Legacy RC4 Kerberos encryption was replaced with modern AES encryption:</p>
+      <command># Enable AES for all user accounts
+Get-ADUser -Filter {Enabled -eq $true} | Set-ADUser -KerberosEncryptionType AES128,AES256</command>
+      <command># Enable AES for krbtgt account
+Set-ADUser -Identity krbtgt -KerberosEncryptionType AES128,AES256</command>
+      <result>All Kerberos tickets now use AES256 encryption, eliminating RC4 downgrade attack vectors.</result>
+    </subsection>
+
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: PHASE 3 - LAPS IMPLEMENTATION                     -->
+  <!-- ============================================================ -->
+
+  <section id="4" title="Phase 3 - LAPS Implementation">
+    <p>Windows LAPS (Local Administrator Password Solution) is built into Windows Server 2025. It automatically manages and rotates local administrator passwords on domain-joined computers, eliminating the risk of password reuse attacks.</p>
+
+    <subsection id="4.1" title="LAPS Schema Extension">
+      <p>AD Schema was extended with LAPS attributes:</p>
+      <command># Add Schema Admins temporarily for schema modification
+Add-ADGroupMember -Identity 'Schema Admins' -Members 'SecAdmin'</command>
+      <command># Extend schema with LAPS attributes
+Update-LapsADSchema -Verbose</command>
+      <p>Schema attributes added:</p>
+      <list>
+        <item>ms-LAPS-Password</item>
+        <item>ms-LAPS-PasswordExpirationTime</item>
+        <item>ms-LAPS-EncryptedPassword</item>
+        <item>ms-LAPS-EncryptedPasswordHistory</item>
+        <item>ms-LAPS-EncryptedDSRMPassword</item>
+      </list>
+      <command># Remove from Schema Admins immediately after
+Remove-ADGroupMember -Identity 'Schema Admins' -Members 'SecAdmin' -Confirm:$false</command>
+    </subsection>
+
+    <subsection id="4.2" title="LAPS Computer Permissions">
+      <command>Set-LapsADComputerSelfPermission -Identity 'DC=ADForest,DC=local'</command>
+      <result>Computers can now update their own LAPS password attribute in AD.</result>
+    </subsection>
+
+    <subsection id="4.3" title="LAPS GPO Configuration">
+      <command>New-GPO -Name 'LAPS Policy' | New-GPLink -Target 'DC=ADForest,DC=local'</command>
+      <command># Backup passwords to Active Directory
+Set-GPRegistryValue -Name 'LAPS Policy' -Key 'HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\LAPS' -ValueName 'BackupDirectory' -Type DWord -Value 2</command>
+      <command># Password age 30 days, minimum length 16 characters
+Set-GPRegistryValue -Name 'LAPS Policy' -Key 'HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\LAPS' -ValueName 'PasswordAgeDays' -Type DWord -Value 30
+Set-GPRegistryValue -Name 'LAPS Policy' -Key 'HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\LAPS' -ValueName 'PasswordLength' -Type DWord -Value 16</command>
+      <impact>A-LAPS-Not-Installed finding resolved. PingCastle score reduced by 15 points.</impact>
+    </subsection>
+
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: PHASE 4 - PRIVILEGED ACCOUNT MANAGEMENT           -->
+  <!-- ============================================================ -->
+
+  <section id="5" title="Phase 4 - Privileged Account Management">
+
+    <subsection id="5.1" title="SecAdmin Account Creation">
+      <p>A dedicated administrative account was created following the principle of least privilege. The built-in Administrator account (RID-500) is a well-known attack target - creating a separate admin account reduces this risk:</p>
+      <command>New-ADUser -Name 'SecAdmin' -SamAccountName 'SecAdmin' -UserPrincipalName 'SecAdmin@ADForest.local' -AccountPassword (ConvertTo-SecureString 'SecureP@ss123!' -AsPlainText -Force) -Enabled $true -PasswordNeverExpires $false</command>
+      <command>Add-ADGroupMember -Identity 'Domain Admins' -Members 'SecAdmin'</command>
+      <command># Mark as sensitive - cannot be delegated
+Set-ADUser -Identity SecAdmin -AccountNotDelegated $true</command>
+    </subsection>
+
+    <subsection id="5.2" title="BreakGlass Account (Emergency Recovery)">
+      <p>The built-in Administrator account was renamed to BreakGlass and disabled. This follows defence-in-depth principles - attackers expect 'Administrator' but find 'BreakGlass' disabled:</p>
+      <command># Rename Administrator to BreakGlass
+Rename-ADObject -Identity (Get-ADUser Administrator).DistinguishedName -NewName 'BreakGlass'</command>
+      <command># Disable the account
+Disable-ADAccount -Identity 'CN=BreakGlass,CN=Users,DC=ADForest,DC=local'</command>
+      <command># Set complex emergency password
+Set-ADAccountPassword -Identity 'CN=BreakGlass,CN=Users,DC=ADForest,DC=local' -NewPassword (ConvertTo-SecureString 'Xk9#mP2$vL5@nQ8!' -AsPlainText -Force) -Reset</command>
+      <table name="account_summary">
+        <header>
+          <col>Account</col>
+          <col>Purpose</col>
+          <col>Status</col>
+          <col>Usage</col>
+        </header>
+        <row><account>SecAdmin</account><purpose>Daily administration</purpose><status>Enabled</status><usage>All routine admin tasks</usage></row>
+        <row><account>BreakGlass (was Administrator)</account><purpose>Emergency recovery only</purpose><status>Disabled</status><usage>Only when SecAdmin fails</usage></row>
+      </table>
+      <note>Security Principles: Least Privilege, Defence in Depth, Security by Obscurity. The BreakGlass account password is stored securely offline.</note>
+    </subsection>
+
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: PHASE 5 - SPLUNK SIEM INTEGRATION                 -->
+  <!-- ============================================================ -->
+
+  <section id="6" title="Phase 5 - Splunk SIEM Integration">
+    <p>Splunk Enterprise 10.2 was deployed as the SIEM solution. Despite being the free version (500MB/day ingestion limit), it provides full SIEM functionality for the homelab environment.</p>
+
+    <subsection id="6.1" title="Splunk Configuration">
+      <p>Windows Event Log collection was configured via inputs.conf (GUI editing restricted in free version):</p>
+      <command>[WinEventLog://Security]
+index = wineventlog
+disabled = false
+start_from = oldest
+current_only = 1
+renderXml = false
+
+[WinEventLog://System]
+index = wineventlog
+disabled = false
+current_only = 1
+
+[WinEventLog://Application]
+index = wineventlog
+disabled = false
+current_only = 1
+
+[WinEventLog://Microsoft-Windows-Sysmon/Operational]
+index = wineventlog
+disabled = false
+current_only = 1
+renderXml = true
+whitelist = 1,3,8,10,11,12,13,22</command>
+    </subsection>
+
+    <subsection id="6.2" title="Sysmon Integration">
+      <p>Sysmon (System Monitor) v15.15 was installed and integrated with Splunk for deep endpoint visibility. Key challenge: Splunk returned errorCode=5 (Access Denied) when accessing Sysmon logs.</p>
+      <p>Resolution: Splunk service was configured to run as LocalSystem:</p>
+      <command>sc.exe config Splunkd obj= 'LocalSystem'</command>
+      <p>Splunk Add-on for Sysmon (TA-microsoft-sysmon v5.0.0) was installed to enable proper field extraction and sourcetype recognition.</p>
+    </subsection>
+
+    <subsection id="6.3" title="Data Collection Results">
+      <table name="data_collection">
+        <header>
+          <col>Sourcetype</col>
+          <col>Daily Volume</col>
+          <col>Events</col>
+        </header>
+        <row><sourcetype>WinEventLog:Security</sourcetype><volume>~176 MB</volume><events>Failed logons, privilege use, group changes</events></row>
+        <row><sourcetype>xmlwineventlog (Sysmon)</sourcetype><volume>~76 MB filtered</volume><events>Process creation, network connections, registry</events></row>
+        <row><sourcetype>WinEventLog:System</sourcetype><volume>~0.17 MB</volume><events>System events, service starts/stops</events></row>
+        <row><sourcetype>WinEventLog:Application</sourcetype><volume>~0.10 MB</volume><events>Application events</events></row>
+      </table>
+      <note>Total daily ingestion: ~253MB - well within the 500MB free version limit. Sysmon filtered to critical event IDs: 1, 3, 8, 10, 11, 12, 13, 22.</note>
+    </subsection>
+
+    <subsection id="6.4" title="Key Security Searches">
+      <table name="spl_queries">
+        <header>
+          <col>Search Purpose</col>
+          <col>SPL Query</col>
+        </header>
+        <row>
+          <purpose>Failed Logon Attempts</purpose>
+          <query>index=wineventlog EventCode=4625 | stats count by Account_Name | sort -count</query>
+        </row>
+        <row>
+          <purpose>Top Event Codes</purpose>
+          <query>index=wineventlog | stats count by EventCode | sort -count | head 10</query>
+        </row>
+        <row>
+          <purpose>Sysmon Process Creation</purpose>
+          <query>index=wineventlog sourcetype=xmlwineventlog | stats count by Image | sort -count | head 10</query>
+        </row>
+        <row>
+          <purpose>Logon Activity</purpose>
+          <query>index=wineventlog EventCode=4624 | stats count by Account_Name | sort -count</query>
+        </row>
+      </table>
+    </subsection>
+
+    <subsection id="6.5" title="Splunk Dashboards Created">
+      <list>
+        <item>AD Security Overview - Top Event Codes bar chart</item>
+        <item>FailedLogonMonitor - Failed logons by account</item>
+        <item>SysmonProcessMonitor - Top processes from Sysmon</item>
+        <item>LogonActivityMonitor - Successful logon tracking</item>
+      </list>
+    </subsection>
+
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: PHASE 6 - BLOODHOUND CE ATTACK PATH ANALYSIS      -->
+  <!-- ============================================================ -->
+
+  <section id="7" title="Phase 6 - BloodHound CE Attack Path Analysis">
+    <p>BloodHound Community Edition was deployed to visualize Active Directory attack paths - a critical tool for both offensive security (red team) and defensive security (blue team) operations.</p>
+
+    <subsection id="7.1" title="Infrastructure">
+      <table name="bloodhound_infrastructure">
+        <header>
+          <col>Component</col>
+          <col>Details</col>
+        </header>
+        <row><component>Platform</component><details>WSL2 Ubuntu 24.04 LTS on Windows Server 2025</details></row>
+        <row><component>Container Runtime</component><details>Docker Engine 29.3.0</details></row>
+        <row><component>BloodHound Version</component><details>Latest (SpecterOps)</details></row>
+        <row><component>Database</component><details>Neo4j 4.4.42 + PostgreSQL 16</details></row>
+        <row><component>Access URL</component><details>http://127.0.0.1:8080</details></row>
+        <row><component>Collector</component><details>SharpHound v2.10.0</details></row>
+      </table>
+    </subsection>
+
+    <subsection id="7.2" title="Deployment Process">
+      <p>Key challenge: Docker Desktop does not support Windows Server. Solution: WSL2 with Docker Engine on Ubuntu.</p>
+      <command># Install WSL2 and Ubuntu
+wsl.exe --install</command>
+      <command># Install Docker Engine on Ubuntu
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin</command>
+      <command># Deploy BloodHound CE
+wget -O docker-compose.yml 'https://raw.githubusercontent.com/SpecterOps/BloodHound/main/examples/docker-compose/docker-compose.yml'
+docker compose up -d</command>
+    </subsection>
+
+    <subsection id="7.3" title="SharpHound Data Collection">
+      <command># Disable Defender temporarily
+Set-MpPreference -DisableRealtimeMonitoring $true</command>
+      <command># Run SharpHound collection
+.\SharpHound.exe -c All --domain ADForest.local</command>
+      <result>328 AD objects enumerated including users, groups, computers, GPOs, ACLs, and trust relationships.</result>
+    </subsection>
+
+    <subsection id="7.4" title="Saved BloodHound Queries">
+      <table name="bloodhound_queries">
+        <header>
+          <col>Query Name</col>
+          <col>Cypher Query</col>
+          <col>Purpose</col>
+        </header>
+        <row>
+          <name>Domain Admin Members</name>
+          <cypher>MATCH (u)-[:MemberOf]->(g:Group {name:'DOMAIN ADMINS@ADFOREST.LOCAL'}) RETURN u,g</cypher>
+          <purpose>List all DA members</purpose>
+        </row>
+        <row>
+          <name>DCSync Rights Check</name>
+          <cypher>MATCH p=(n)-[:DCSync]->(d:Domain) RETURN p</cypher>
+          <purpose>Find DCSync privileges</purpose>
+        </row>
+        <row>
+          <name>Kerberoastable Accounts</name>
+          <cypher>MATCH (u:User {hasspn:true}) RETURN u</cypher>
+          <purpose>Find SPN accounts</purpose>
+        </row>
+        <row>
+          <name>Shortest Path to DA</name>
+          <cypher>PATHFINDING: Any -> Domain Admins</cypher>
+          <purpose>Attack path visualization</purpose>
+        </row>
+      </table>
+      <note>These queries are saved in BloodHound CE for reuse across future assessments and demonstrate proficiency in Cypher query language.</note>
+    </subsection>
+
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: CHALLENGES AND RESOLUTIONS                        -->
+  <!-- ============================================================ -->
+
+  <section id="8" title="Challenges and Resolutions">
+    <table name="challenges">
+      <header>
+        <col>Challenge</col>
+        <col>Root Cause</col>
+        <col>Resolution</col>
+      </header>
+      <row>
+        <challenge>Splunk errorCode=5 for Sysmon</challenge>
+        <root_cause>Splunk service lacked permission to read Sysmon event log</root_cause>
+        <resolution>Changed Splunk service to run as LocalSystem via sc.exe config</resolution>
+      </row>
+      <row>
+        <challenge>Sysmon Add-on not loading</challenge>
+        <root_cause>Triple-nested folder structure after extraction</root_cause>
+        <resolution>Used robocopy to copy correct inner folder to Splunk apps directory</resolution>
+      </row>
+      <row>
+        <challenge>Docker Desktop on Windows Server</challenge>
+        <root_cause>Docker Desktop requires Windows 10/11 desktop OS</root_cause>
+        <resolution>Installed WSL2 + Ubuntu + Docker Engine as alternative</resolution>
+      </row>
+      <row>
+        <challenge>BloodHound CLI 404 error</challenge>
+        <root_cause>v8.7.0 does not include Linux CLI binary</root_cause>
+        <resolution>Used docker-compose method (official recommended approach)</resolution>
+      </row>
+      <row>
+        <challenge>Schema update access denied</challenge>
+        <root_cause>Schema Admin group membership requires new login session</root_cause>
+        <resolution>Restarted Windows Server to refresh Kerberos token</resolution>
+      </row>
+      <row>
+        <challenge>PingCastle score increased after fixes</challenge>
+        <root_cause>SecAdmin left in Schema Admins after LAPS update</root_cause>
+        <resolution>Removed SecAdmin from Schema Admins - best practice</resolution>
+      </row>
+      <row>
+        <challenge>Splunk Smart Mode hiding results</challenge>
+        <root_cause>Stats queries show in Statistics tab not Events tab</root_cause>
+        <resolution>Clicked Statistics tab to view results</resolution>
+      </row>
+      <row>
+        <challenge>SharpHound blocked by Defender</challenge>
+        <root_cause>Windows Defender flags SharpHound as security tool</root_cause>
+        <resolution>Temporarily disabled real-time monitoring during download</resolution>
+      </row>
+    </table>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: PLANNED ENHANCEMENTS                              -->
+  <!-- ============================================================ -->
+
+  <section id="9" title="Planned Enhancements">
+
+    <subsection id="9.1" title="TopTon Security Gateway (In Progress)">
+      <p>A TopTon mini PC (Intel N150, 33GB DDR5) is being configured as an inline security gateway:</p>
+      <table name="gateway_interfaces">
+        <header>
+          <col>Interface</col>
+          <col>Role</col>
+        </header>
+        <row><interface>ETH0</interface><role>WAN - Incoming internet cable</role></row>
+        <row><interface>ETH1</interface><role>LAN - WiFi router (home network)</role></row>
+        <row><interface>ETH2</interface><role>Homelab - Windows Server 2025</role></row>
+        <row><interface>ETH3</interface><role>Management/spare</role></row>
+      </table>
+      <p>Software stack:</p>
+      <list>
+        <item>Rocky Linux 9 - Base OS</item>
+        <item>Suricata - Inline IPS (active threat blocking)</item>
+        <item>OpenVPN - Secure remote access</item>
+      </list>
+    </subsection>
+
+    <subsection id="9.2" title="Additional Planned Items">
+      <list>
+        <item>BadBlood - Realistic AD test data population</item>
+        <item>Network architecture diagram (draw.io)</item>
+        <item>Wazuh SIEM - Open source alternative/complement to Splunk</item>
+        <item>MITRE ATT&amp;CK framework mapping</item>
+        <item>Incident response playbook</item>
+        <item>Attack simulation and detection validation</item>
+      </list>
+    </subsection>
+
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: SKILLS DEMONSTRATED                              -->
+  <!-- ============================================================ -->
+
+  <section id="10" title="Skills Demonstrated">
+    <table name="skills">
+      <header>
+        <col>Skill Area</col>
+        <col>Tools / Technologies</col>
+      </header>
+      <row><skill>Active Directory Administration</skill><tools>Windows Server 2025, PowerShell, ADUC</tools></row>
+      <row><skill>Security Assessment</skill><tools>PingCastle, BloodHound CE, SharpHound</tools></row>
+      <row><skill>SIEM Administration</skill><tools>Splunk Enterprise, SPL queries, Dashboards</tools></row>
+      <row><skill>Endpoint Detection</skill><tools>Sysmon, Splunk Add-on for Sysmon</tools></row>
+      <row><skill>Identity Management</skill><tools>LAPS, GPO, Privileged Account Management</tools></row>
+      <row><skill>Containerisation</skill><tools>Docker Engine, WSL2, docker-compose</tools></row>
+      <row><skill>Linux Administration</skill><tools>Ubuntu, Rocky Linux, bash</tools></row>
+      <row><skill>Network Security</skill><tools>Suricata, TAP monitoring</tools></row>
+      <row><skill>Scripting</skill><tools>PowerShell, Bash</tools></row>
+      <row><skill>Documentation</skill><tools>GitHub, Portfolio writing</tools></row>
+    </table>
+  </section>
+
+  <footer>
+    <text>END OF PORTFOLIO DOCUMENT</text>
+    <note>Document generated for GitHub Portfolio</note>
+    <author>Arturs Kaufmanis | 2026</author>
+  </footer>
+
+</document>
