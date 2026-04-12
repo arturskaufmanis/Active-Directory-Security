@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<portfolio>
+  <metadata>
+    <author>Arturs Kaufmanis</author>
+    <title>Active Directory Security Homelab Portfolio</title>
+    <institution>Manchester Metropolitan University</institution>
+    <bootcamp>HyperionDev Cybersecurity Bootcamp</bootcamp>
+    <year>2026</year>
+    <description>Documents the design, implementation, and security hardening of a comprehensive Active Directory homelab environment demonstrating enterprise-level cybersecurity skills.</description>
+  </metadata>
+
+  <environment>
+    <components>
+      <component>
+        <name>Domain Controller</name>
+        <specification>Windows Server 2025 (Build 26100)</specification>
+      </component>
+      <component>
+        <name>Domain Name</name>
+        <specification>ADForest.local</specification>
+      </component>
+      <component>
+        <name>Forest/Domain Functional Level</name>
+        <specification>Windows Server 2016</specification>
+      </component>
+      <component>
+        <name>DC Hostname</name>
+        <specification>WIN-ESVD1CAD1FJ</specification>
+      </component>
+      <component>
+        <name>RAM</name>
+        <specification>24GB</specification>
+      </component>
+      <component>
+        <name>SIEM</name>
+        <specification>Splunk Enterprise 10.2 (Free)</specification>
+      </component>
+      <component>
+        <name>EDR</name>
+        <specification>Sysmon v15.15 with SwiftOnSecurity config</specification>
+      </component>
+      <component>
+        <name>Attack Path Tool</name>
+        <specification>BloodHound Community Edition (Docker)</specification>
+      </component>
+      <component>
+        <name>Container Platform</name>
+        <specification>Docker Engine on WSL2 Ubuntu 24.04</specification>
+      </component>
+      <component>
+        <name>Security Assessment</name>
+        <specification>PingCastle v3.x</specification>
+      </component>
+    </components>
+  </environment>
+
+  <pingcastle_scores>
+    <session name="Baseline">
+      <global_score>60</global_score>
+      <privileged>40</privileged>
+      <stale_objects>31</stale_objects>
+      <anomaly>60</anomaly>
+      <trust>0</trust>
+    </session>
+    <session name="Session 1 - Password/NTLMv1 fixes">
+      <global_score>50</global_score>
+      <privileged>0</privileged>
+      <stale_objects>21</stale_objects>
+      <anomaly>50</anomaly>
+      <trust>0</trust>
+    </session>
+    <session name="Session 2 - Backup/Audit fixes">
+      <global_score>35</global_score>
+      <privileged>0</privileged>
+      <stale_objects>21</stale_objects>
+      <anomaly>35</anomaly>
+      <trust>0</trust>
+    </session>
+    <session name="Session 3 - LAPS/AES/SecAdmin">
+      <global_score>21</global_score>
+      <privileged>20</privileged>
+      <stale_objects>21</stale_objects>
+      <anomaly>20</anomaly>
+      <trust>0</trust>
+    </session>
+    <session name="Final - Schema Admins/Backup">
+      <global_score>20</global_score>
+      <privileged>20</privileged>
+      <stale_objects>20</stale_objects>
+      <anomaly>20</anomaly>
+      <trust>0</trust>
+    </session>
+    <improvement>67% improvement from baseline score of 60 to final score of 20</improvement>
+  </pingcastle_scores>
+
+  <phases>
+    <phase id="1" name="Active Directory Deployment and Baseline">
+      <description>Windows Server 2025 installed and configured as Domain Controller for ADForest.local.</description>
+      <roles_installed>
+        <role>Active Directory Domain Services (AD DS)</role>
+        <role>DNS Server</role>
+        <role>Group Policy Management</role>
+      </roles_installed>
+      <baseline_findings>
+        <finding points="15">S-OldNtlm – NTLMv1 authentication enabled</finding>
+        <finding points="15">A-LAPS-Not-Installed – Local Admin Password Solution not deployed</finding>
+        <finding points="10">A-AuditDC – Insufficient audit policy on Domain Controllers</finding>
+        <finding points="10">MachineAccountQuota – Default quota allows any user to join computers to domain</finding>
+        <finding points="10">Schema Admins not empty – Administrator in Schema Admins group</finding>
+        <finding points="5">A-HardenedPaths – Hardened UNC paths not configured</finding>
+        <finding points="5">A-NotEnoughDC – Single Domain Controller, no redundancy</finding>
+        <finding points="5">S-DC-SubnetMissing – DC subnets not declared in AD Sites and Services</finding>
+        <finding points="1">S-PwdNeverExpires – Accounts with non-expiring passwords</finding>
+      </baseline_findings>
+    </phase>
+
+    <phase id="2" name="Security Hardening">
+      <hardening_steps>
+        <step id="2.1" name="Password Policy">
+          <description>Minimum password length increased from 7 to 12 characters.</description>
+          <command>Set-ADDefaultDomainPasswordPolicy -Identity 'ADForest.local' -MinPasswordLength 12</command>
+        </step>
+        <step id="2.2" name="AD Recycle Bin">
+          <description>Enabled AD Recycle Bin; deleted objects recoverable within 180 days.</description>
+          <command>Enable-ADOptionalFeature -Identity 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target 'ADForest.local' -Confirm:$false</command>
+        </step>
+        <step id="2.3" name="MachineAccountQuota">
+          <description>Set to 0; only administrators can join computers to the domain.</description>
+          <command>Set-ADDomain -Identity 'ADForest.local' -Replace @{'ms-DS-MachineAccountQuota'='0'}</command>
+        </step>
+        <step id="2.4" name="Schema Admins Cleanup">
+          <description>Administrator account removed from Schema Admins group.</description>
+          <command>Remove-ADGroupMember -Identity 'Schema Admins' -Members 'Administrator' -Confirm:$false</command>
+        </step>
+        <step id="2.5" name="Account Delegation Protection">
+          <description>Administrator account marked as not delegatable, preventing Kerberos delegation attacks.</description>
+          <command>Set-ADUser -Identity 'Administrator' -AccountNotDelegated $true</command>
+        </step>
+        <step id="2.6" name="NTLMv1 Disabled">
+          <description>Legacy NTLMv1 authentication disabled via registry and GPO.</description>
+          <command>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name 'LmCompatibilityLevel' -Value 5</command>
+        </step>
+        <step id="2.7" name="Audit Policy">
+          <description>Advanced audit policies configured on Domain Controllers.</description>
+        </step>
+        <step id="2.8" name="Hardened UNC Paths">
+          <description>Hardened UNC paths configured via GPO to prevent path hijacking.</description>
+        </step>
+        <step id="2.9" name="AES Kerberos">
+          <description>RC4 encryption deprecated; AES256 and AES128 enforced for Kerberos.</description>
+        </step>
+        <step id="2.10" name="LAPS Deployment">
+          <description>Local Administrator Password Solution deployed and verified across domain computers.</description>
+        </step>
+      </hardening_steps>
+    </phase>
+
+    <phase id="3" name="Splunk SIEM Integration">
+      <description>Splunk Enterprise 10.2 deployed with Sysmon endpoint telemetry and custom dashboards.</description>
+      <components>
+        <component>Splunk Enterprise 10.2 (Free licence)</component>
+        <component>Sysmon v15.15 with SwiftOnSecurity config</component>
+        <component>Splunk Add-on for Sysmon (custom index: sysmon)</component>
+      </components>
+      <dashboards>
+        <dashboard>Process Creation</dashboard>
+        <dashboard>Network Connections</dashboard>
+        <dashboard>Registry Changes</dashboard>
+        <dashboard>File Operations</dashboard>
+        <dashboard>Sysmon Health</dashboard>
+      </dashboards>
+    </phase>
+
+    <phase id="4" name="BloodHound CE Attack Path Analysis">
+      <description>BloodHound Community Edition deployed via Docker on WSL2. SharpHound collected 328 AD objects.</description>
+      <deployment>
+        <step>WSL2 and Ubuntu installed on Windows Server 2025</step>
+        <step>Docker Engine installed on Ubuntu</step>
+        <step>BloodHound CE deployed via docker-compose</step>
+        <step>SharpHound run with -c All flag against ADForest.local</step>
+      </deployment>
+      <collection_result>328 AD objects enumerated including users, groups, computers, GPOs, ACLs, and trust relationships.</collection_result>
+      <saved_queries>
+        <query name="Domain Admin Members">
+          <cypher>MATCH (u)-[:MemberOf]->(g:Group {name:'DOMAIN ADMINS@ADFOREST.LOCAL'}) RETURN u,g</cypher>
+          <purpose>List all Domain Admin members</purpose>
+        </query>
+        <query name="DCSync Rights Check">
+          <cypher>MATCH p=(n)-[:DCSync]->(d:Domain) RETURN p</cypher>
+          <purpose>Find accounts with DCSync privileges</purpose>
+        </query>
+        <query name="Kerberoastable Accounts">
+          <cypher>MATCH (u:User {hasspn:true}) RETURN u</cypher>
+          <purpose>Find accounts with Service Principal Names</purpose>
+        </query>
+        <query name="Shortest Path to DA">
+          <cypher>PATHFINDING: Any -> Domain Admins</cypher>
+          <purpose>Attack path visualisation</purpose>
+        </query>
+      </saved_queries>
+    </phase>
+  </phases>
+
+  <challenges>
+    <challenge>
+      <issue>Splunk errorCode=5 for Sysmon</issue>
+      <root_cause>Splunk service lacked permission to read Sysmon event log</root_cause>
+      <resolution>Changed Splunk service to run as LocalSystem via sc.exe config</resolution>
+    </challenge>
+    <challenge>
+      <issue>Sysmon Add-on not loading</issue>
+      <root_cause>Triple-nested folder structure after extraction</root_cause>
+      <resolution>Used robocopy to copy correct inner folder to Splunk apps directory</resolution>
+    </challenge>
+    <challenge>
+      <issue>Docker Desktop incompatible with Windows Server</issue>
+      <root_cause>Docker Desktop requires Windows 10/11 desktop OS</root_cause>
+      <resolution>Installed WSL2 + Ubuntu + Docker Engine as alternative</resolution>
+    </challenge>
+    <challenge>
+      <issue>BloodHound CLI 404 error</issue>
+      <root_cause>v8.7.0 does not include Linux CLI binary</root_cause>
+      <resolution>Used docker-compose method (official recommended approach)</resolution>
+    </challenge>
+    <challenge>
+      <issue>Schema update access denied</issue>
+      <root_cause>Schema Admin group membership requires new login session</root_cause>
+      <resolution>Restarted Windows Server to refresh Kerberos token</resolution>
+    </challenge>
+    <challenge>
+      <issue>PingCastle score increased after fixes</issue>
+      <root_cause>SecAdmin left in Schema Admins after LAPS update</root_cause>
+      <resolution>Removed SecAdmin from Schema Admins – best practice enforced</resolution>
+    </challenge>
+    <challenge>
+      <issue>SharpHound blocked by Defender</issue>
+      <root_cause>Windows Defender flags SharpHound as security tool</root_cause>
+      <resolution>Temporarily disabled real-time monitoring during download</resolution>
+    </challenge>
+  </challenges>
+
+  <planned_enhancements>
+    <gateway name="TopTon Security Gateway" status="In Progress">
+      <hardware>Intel N150, 33GB DDR5</hardware>
+      <interfaces>
+        <interface port="ETH0" role="WAN - Incoming internet cable"/>
+        <interface port="ETH1" role="LAN - WiFi router (home network)"/>
+        <interface port="ETH2" role="Homelab - Windows Server 2025"/>
+        <interface port="ETH3" role="Management/spare"/>
+      </interfaces>
+      <software>
+        <item>Rocky Linux 9 – Base OS</item>
+        <item>Suricata – Inline IPS (active threat blocking)</item>
+        <item>Zeek – Network traffic analysis and logging</item>
+        <item>OpenVPN – Secure remote access</item>
+      </software>
+    </gateway>
+    <items>
+      <item>BadBlood – Realistic AD test data population</item>
+      <item>Network architecture diagram (draw.io)</item>
+      <item>Wazuh SIEM – Open source alternative/complement to Splunk</item>
+      <item>MITRE ATT&amp;CK framework mapping</item>
+      <item>Incident response playbook</item>
+      <item>Attack simulation and detection validation</item>
+    </items>
+  </planned_enhancements>
+
+  <skills>
+    <skill area="Active Directory Administration" level="Proficient">
+      <tools>Windows Server 2025, PowerShell, ADUC</tools>
+    </skill>
+    <skill area="Security Assessment" level="Proficient">
+      <tools>PingCastle, BloodHound CE, SharpHound</tools>
+    </skill>
+    <skill area="SIEM Administration" level="Proficient">
+      <tools>Splunk Enterprise, SPL queries, Dashboards</tools>
+    </skill>
+    <skill area="Endpoint Detection" level="Proficient">
+      <tools>Sysmon, Splunk Add-on for Sysmon</tools>
+    </skill>
+    <skill area="Identity Management" level="Proficient">
+      <tools>LAPS, GPO, Privileged Account Management</tools>
+    </skill>
+    <skill area="Containerisation" level="Competent">
+      <tools>Docker Engine, WSL2, docker-compose</tools>
+    </skill>
+    <skill area="Linux Administration" level="Competent">
+      <tools>Ubuntu, Rocky Linux, bash</tools>
+    </skill>
+    <skill area="Network Security" level="In Progress">
+      <tools>Suricata, Zeek, TAP monitoring</tools>
+    </skill>
+    <skill area="Scripting" level="Proficient">
+      <tools>PowerShell, Bash</tools>
+    </skill>
+    <skill area="Documentation" level="Proficient">
+      <tools>GitHub, Portfolio writing</tools>
+    </skill>
+  </skills>
+
+  <professional_background>
+    <qualification>
+      <name>Cybersecurity Bootcamp</name>
+      <details>HyperionDev – Manchester Metropolitan University</details>
+    </qualification>
+    <qualification>
+      <name>Police Academy</name>
+      <details>Police Academy of Latvia</details>
+    </qualification>
+    <qualification>
+      <name>Defence Academy</name>
+      <details>Defence Academy of Latvia</details>
+    </qualification>
+    <qualification>
+      <name>Language Skills</name>
+      <details>Native Russian, Latvian; English</details>
+    </qualification>
+    <qualification>
+      <name>Investigative Experience</name>
+      <details>Background in investigative work</details>
+    </qualification>
+    <qualification>
+      <name>Secure Environment</name>
+      <details>Experience in SC (Security Cleared) environments</details>
+    </qualification>
+  </professional_background>
+</portfolio>
