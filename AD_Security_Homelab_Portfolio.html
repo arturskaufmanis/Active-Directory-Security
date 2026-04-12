@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AD Security Homelab Portfolio — Arturs Kaufmanis</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0e13;
+    --surface:   #0f1520;
+    --card:      #131c2b;
+    --border:    #1e3050;
+    --accent:    #00c8ff;
+    --accent2:   #00ff9d;
+    --warn:      #ff6b35;
+    --text:      #c9d8e8;
+    --muted:     #5a7a99;
+    --heading:   #e8f4ff;
+    --mono:      'Share Tech Mono', monospace;
+    --display:   'Rajdhani', sans-serif;
+    --body:      'Inter', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── SCAN-LINE OVERLAY ─────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,200,255,0.015) 2px, rgba(0,200,255,0.015) 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* ── SIDEBAR NAV ───────────────────────────────────── */
+  nav {
+    position: fixed;
+    top: 0; left: 0;
+    width: 220px; height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 32px 0;
+    overflow-y: auto;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav-brand {
+    padding: 0 20px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .nav-brand .logo {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .nav-brand .name {
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--heading);
+    line-height: 1.2;
+  }
+
+  nav a {
+    display: block;
+    padding: 8px 20px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: 0.5px;
+    border-left: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  nav a:hover {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(0,200,255,0.05);
+  }
+  nav a .num {
+    color: var(--accent);
+    margin-right: 6px;
+    font-size: 10px;
+  }
+
+  /* ── MAIN CONTENT ──────────────────────────────────── */
+  main {
+    margin-left: 220px;
+    padding: 0 48px 80px;
+    max-width: 1000px;
+  }
+
+  /* ── COVER ─────────────────────────────────────────── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 0 60px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::after {
+    content: 'AD';
+    position: absolute;
+    right: -20px; top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--display);
+    font-size: 280px;
+    font-weight: 700;
+    color: rgba(0,200,255,0.03);
+    line-height: 1;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .cover-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .cover h1 {
+    font-family: var(--display);
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--heading);
+    line-height: 1.05;
+    margin-bottom: 8px;
+  }
+
+  .cover h2 {
+    font-family: var(--display);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 28px;
+  }
+
+  .cover-stack {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 1px;
+    background: var(--card);
+  }
+
+  .badge.accent { border-color: var(--accent); color: var(--accent); }
+  .badge.green  { border-color: var(--accent2); color: var(--accent2); }
+
+  .cover-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 2;
+  }
+  .cover-meta strong { color: var(--text); }
+
+  /* ── SECTIONS ──────────────────────────────────────── */
+  section {
+    padding: 64px 0 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h2.section-title {
+    font-family: var(--display);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--heading);
+    margin-bottom: 28px;
+    line-height: 1.1;
+  }
+
+  h3.sub-title {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 36px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h3.sub-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 18px;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  p { margin-bottom: 12px; color: var(--text); }
+
+  ul {
+    list-style: none;
+    margin: 8px 0 16px 0;
+  }
+  ul li {
+    padding: 4px 0 4px 20px;
+    position: relative;
+    color: var(--text);
+  }
+  ul li::before {
+    content: '›';
+    position: absolute; left: 0;
+    color: var(--accent);
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  /* ── TABLES ────────────────────────────────────────── */
+  .table-wrap { overflow-x: auto; margin: 16px 0 24px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead tr {
+    background: rgba(0,200,255,0.08);
+    border-bottom: 1px solid var(--accent);
+  }
+
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: rgba(0,200,255,0.04); }
+
+  tbody td {
+    padding: 10px 14px;
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  tbody td:first-child {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--heading);
+    white-space: nowrap;
+  }
+
+  /* score table colouring */
+  .score-good  { color: var(--accent2) !important; font-weight: 600; }
+  .score-mid   { color: #ffd166 !important; font-weight: 600; }
+  .score-bad   { color: var(--warn) !important; font-weight: 600; }
+
+  /* ── CODE BLOCKS ───────────────────────────────────── */
+  pre {
+    background: #070b10;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    margin: 12px 0 20px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #7ecfff;
+    line-height: 1.6;
+  }
+
+  pre .comment { color: var(--muted); }
+  pre .cmd     { color: var(--accent2); }
+
+  /* ── CALLOUT BOXES ─────────────────────────────────── */
+  .callout {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    background: rgba(0,255,157,0.04);
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+  .callout.warn {
+    border-left-color: var(--warn);
+    background: rgba(255,107,53,0.04);
+  }
+  .callout.info {
+    border-left-color: var(--accent);
+    background: rgba(0,200,255,0.04);
+  }
+  .callout-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    color: var(--accent2);
+  }
+  .callout.warn  .callout-label { color: var(--warn); }
+  .callout.info  .callout-label { color: var(--accent); }
+
+  /* ── SCORE CARD ────────────────────────────────────── */
+  .score-card {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 20px 32px;
+    margin: 0 12px 12px 0;
+  }
+  .score-card .val {
+    font-family: var(--display);
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .score-card .lbl {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* ── FOOTER ────────────────────────────────────────── */
+  footer {
+    margin-left: 220px;
+    padding: 32px 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  footer span { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SIDEBAR                                                        -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-brand">
+    <div class="logo">Portfolio</div>
+    <div class="name">Arturs<br>Kaufmanis</div>
+  </div>
+  <a href="#cover"><span class="num">00</span> Cover</a>
+  <a href="#s1"><span class="num">01</span> Executive Summary</a>
+  <a href="#s2"><span class="num">02</span> AD Deployment</a>
+  <a href="#s3"><span class="num">03</span> Security Hardening</a>
+  <a href="#s4"><span class="num">04</span> LAPS</a>
+  <a href="#s5"><span class="num">05</span> Privileged Accounts</a>
+  <a href="#s6"><span class="num">06</span> Splunk SIEM</a>
+  <a href="#s7"><span class="num">07</span> BloodHound CE</a>
+  <a href="#s8"><span class="num">08</span> Challenges</a>
+  <a href="#s9"><span class="num">09</span> Planned Work</a>
+  <a href="#s10"><span class="num">10</span> Skills</a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MAIN                                                           -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<main>
+
+  <!-- COVER -->
+  <div class="cover" id="cover">
+    <div class="cover-tag">Homelab Portfolio · 2026</div>
+    <h1>Active Directory<br>Security</h1>
+    <h2>Homelab Portfolio</h2>
+    <div class="cover-stack">
+      <span class="badge accent">Windows Server 2025</span>
+      <span class="badge accent">Splunk SIEM</span>
+      <span class="badge accent">BloodHound CE</span>
+      <span class="badge accent">Sysmon v15.15</span>
+      <span class="badge green">Docker · WSL2</span>
+      <span class="badge green">PingCastle</span>
+    </div>
+    <div class="cover-meta">
+      <strong>Arturs Kaufmanis</strong><br>
+      Cybersecurity Professional · HyperionDev Bootcamp Graduate<br>
+      Manchester Metropolitan University
+    </div>
+  </div>
+
+  <!-- ── SECTION 1 ─────────────────────────────────────────────── -->
+  <section id="s1">
+    <div class="section-label">Section 01</div>
+    <h2 class="section-title">Executive Summary</h2>
+
+    <p>This portfolio documents the design, implementation, and security hardening of a comprehensive Active Directory homelab environment. The project demonstrates enterprise-level cybersecurity skills including SIEM integration, attack path analysis, identity management, and security monitoring.</p>
+    <p>The lab was built to demonstrate practical competency in:</p>
+    <ul>
+      <li>Active Directory deployment and security hardening</li>
+      <li>SIEM implementation using Splunk Enterprise</li>
+      <li>Endpoint detection using Sysmon and Splunk Add-on for Sysmon</li>
+      <li>Attack path visualization using BloodHound Community Edition</li>
+      <li>Local Administrator Password Solution (LAPS) deployment</li>
+      <li>PingCastle security assessment scoring</li>
+      <li>WSL2, Docker, and containerized security tools</li>
+    </ul>
+
+    <h3 class="sub-title">1.1 Lab Environment Summary</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Component</th><th>Specification</th></tr></thead>
+        <tbody>
+          <tr><td>Domain Controller</td><td>Windows Server 2025 (Build 26100)</td></tr>
+          <tr><td>Domain Name</td><td>ADForest.local</td></tr>
+          <tr><td>Forest / Domain Functional Level</td><td>Windows Server 2016</td></tr>
+          <tr><td>DC Hostname</td><td>WIN-ESVD1CAD1FJ</td></tr>
+          <tr><td>RAM</td><td>24 GB</td></tr>
+          <tr><td>SIEM</td><td>Splunk Enterprise 10.2 (Free)</td></tr>
+          <tr><td>EDR</td><td>Sysmon v15.15 with SwiftOnSecurity config</td></tr>
+          <tr><td>Attack Path Tool</td><td>BloodHound Community Edition (Docker)</td></tr>
+          <tr><td>Container Platform</td><td>Docker Engine on WSL2 Ubuntu 24.04</td></tr>
+          <tr><td>Security Assessment</td><td>PingCastle v3.x</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-title">1.2 PingCastle Score Progression</h3>
+    <div style="margin-bottom:24px;">
+      <div class="score-card" style="border-color:var(--warn);">
+        <div class="val score-bad">60</div><div class="lbl">Baseline</div>
+      </div>
+      <div class="score-card" style="border-color:var(--accent2);">
+        <div class="val score-good">20</div><div class="lbl">Final</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Session</th><th>Global</th><th>Privileged</th><th>Stale Objects</th><th>Anomaly</th><th>Trust</th></tr></thead>
+        <tbody>
+          <tr><td>Baseline</td><td class="score-bad">60</td><td class="score-bad">40</td><td class="score-mid">31</td><td class="score-bad">60</td><td>0</td></tr>
+          <tr><td>Session 1 – Password / NTLMv1 fixes</td><td class="score-mid">50</td><td class="score-good">0</td><td class="score-mid">21</td><td class="score-mid">50</td><td>0</td></tr>
+          <tr><td>Session 2 – Backup / Audit fixes</td><td class="score-mid">35</td><td class="score-good">0</td><td class="score-mid">21</td><td class="score-mid">35</td><td>0</td></tr>
+          <tr><td>Session 3 – LAPS / AES / SecAdmin</td><td class="score-mid">21</td><td class="score-mid">20</td><td class="score-mid">21</td><td class="score-good">20</td><td>0</td></tr>
+          <tr><td>Final – Schema Admins / Backup</td><td class="score-good">20</td><td class="score-mid">20</td><td class="score-good">20</td><td class="score-good">20</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <div class="callout-label">Result</div>
+      67% improvement from baseline score of 60 to final score of 20. Remaining findings are lab limitations (single DC, BreakGlass used within 60 days).
+    </div>
+  </section>
+
+  <!-- ── SECTION 2 ─────────────────────────────────────────────── -->
+  <section id="s2">
+    <div class="section-label">Section 02</div>
+    <h2 class="section-title">Phase 1 — Active Directory Deployment &amp; Baseline</h2>
+
+    <h3 class="sub-title">2.1 Initial Setup</h3>
+    <p>Windows Server 2025 was installed and configured as a Domain Controller for the ADForest.local domain. The following roles were installed:</p>
+    <ul>
+      <li>Active Directory Domain Services (AD DS)</li>
+      <li>DNS Server</li>
+      <li>Group Policy Management</li>
+    </ul>
+
+    <h3 class="sub-title">2.2 Baseline PingCastle Assessment</h3>
+    <p>PingCastle was used to establish a security baseline. Initial scan revealed a global score of 60 with multiple critical findings:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Finding</th><th>Points</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>S-OldNtlm</td><td class="score-bad">15</td><td>NTLMv1 authentication enabled</td></tr>
+          <tr><td>A-LAPS-Not-Installed</td><td class="score-bad">15</td><td>Local Admin Password Solution not deployed</td></tr>
+          <tr><td>A-AuditDC</td><td class="score-mid">10</td><td>Insufficient audit policy on Domain Controllers</td></tr>
+          <tr><td>MachineAccountQuota</td><td class="score-mid">10</td><td>Default quota allows any user to join computers to domain</td></tr>
+          <tr><td>Schema Admins not empty</td><td class="score-mid">10</td><td>Administrator in Schema Admins group</td></tr>
+          <tr><td>A-HardenedPaths</td><td>5</td><td>Hardened UNC paths not configured</td></tr>
+          <tr><td>A-NotEnoughDC</td><td>5</td><td>Single Domain Controller — no redundancy</td></tr>
+          <tr><td>S-DC-SubnetMissing</td><td>5</td><td>DC subnets not declared in AD Sites and Services</td></tr>
+          <tr><td>S-PwdNeverExpires</td><td>1</td><td>Accounts with non-expiring passwords</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SECTION 3 ─────────────────────────────────────────────── -->
+  <section id="s3">
+    <div class="section-label">Section 03</div>
+    <h2 class="section-title">Phase 2 — Security Hardening</h2>
+
+    <h3 class="sub-title">3.1 Password Policy</h3>
+    <p>Default password policy was strengthened to meet enterprise standards:</p>
+    <pre>Set-ADDefaultDomainPasswordPolicy -Identity 'ADForest.local' -MinPasswordLength 12</pre>
+    <div class="callout"><div class="callout-label">Result</div>Minimum password length increased from 7 to 12 characters.</div>
+
+    <h3 class="sub-title">3.2 AD Recycle Bin</h3>
+    <p>Enabled AD Recycle Bin to allow recovery of accidentally deleted objects:</p>
+    <pre>Enable-ADOptionalFeature -Identity 'Recycle Bin Feature' -Scope ForestOrConfigurationSet -Target 'ADForest.local' -Confirm:$false</pre>
+    <div class="callout"><div class="callout-label">Result</div>Deleted AD objects can now be recovered within 180 days (tombstone lifetime).</div>
+
+    <h3 class="sub-title">3.3 MachineAccountQuota</h3>
+    <p>By default, any domain user can join up to 10 computers to the domain. This was disabled to prevent unauthorized domain joins:</p>
+    <pre>Set-ADDomain -Identity 'ADForest.local' -Replace @{'ms-DS-MachineAccountQuota'='0'}</pre>
+    <div class="callout"><div class="callout-label">Result</div>Only administrators can now join computers to the domain, preventing unauthorized device registration.</div>
+
+    <h3 class="sub-title">3.4 Schema Admins Cleanup</h3>
+    <p>The built-in Administrator account was removed from Schema Admins. Schema Admins is one of the most powerful groups in AD — members can make irreversible forest-wide schema modifications:</p>
+    <pre>Remove-ADGroupMember -Identity 'Schema Admins' -Members 'Administrator' -Confirm:$false</pre>
+    <div class="callout warn"><div class="callout-label">Best Practice</div>Schema Admins must be empty at all times except during planned schema modifications. Members are only added temporarily and removed immediately after.</div>
+
+    <h3 class="sub-title">3.5 Account Delegation Protection</h3>
+    <p>The Administrator account was protected against Kerberos delegation attacks:</p>
+    <pre>Set-ADUser -Identity 'Administrator' -AccountNotDelegated $true</pre>
+    <div class="callout"><div class="callout-label">Result</div>Prevents attackers from using delegation to impersonate the Administrator account.</div>
+
+    <h3 class="sub-title">3.6 NTLMv1 Disabled</h3>
+    <p>NTLMv1 is a legacy and insecure authentication protocol. It was disabled via both registry and GPO:</p>
+    <pre>Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name 'LmCompatibilityLevel' -Value 5
+
+Set-GPRegistryValue -Name 'Default Domain Controllers Policy' -Key 'HKLM\SYSTEM\CurrentControlSet\Control\Lsa' -ValueName 'LmCompatibilityLevel' -Type DWord -Value 5</pre>
+    <div class="callout info"><div class="callout-label">Note</div>LmCompatibilityLevel 5 = Only NTLMv2 responses are sent. NTLMv1 and LM are refused.</div>
+
+    <h3 class="sub-title">3.7 Audit Policy</h3>
+    <p>Comprehensive audit policy was configured to capture all security-relevant events:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Audit Category</th><th>Setting</th></tr></thead>
+        <tbody>
+          <tr><td>Credential Validation</td><td>Success and Failure</td></tr>
+          <tr><td>User Account Management</td><td>Success and Failure</td></tr>
+          <tr><td>Security Group Management</td><td>Success and Failure</td></tr>
+          <tr><td>Logon Events</td><td>Success and Failure</td></tr>
+          <tr><td>Logoff Events</td><td>Success</td></tr>
+          <tr><td>Sensitive Privilege Use</td><td>Success and Failure</td></tr>
+          <tr><td>Audit Policy Change</td><td>Success and Failure</td></tr>
+          <tr><td>Process Creation (4688)</td><td>Success</td></tr>
+          <tr><td>Directory Service Changes</td><td>Success and Failure</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-title">3.8 AD Backup</h3>
+    <p>Windows Server Backup was installed and a system state backup was configured:</p>
+    <pre>Install-WindowsFeature -Name Windows-Server-Backup
+<span class="comment"># Create VHD for backup storage</span>
+diskpart /s backup_script.txt  <span class="comment"># Creates 30GB VHD mounted as E:</span>
+wbadmin start systemstatebackup -backupTarget:E: -quiet</pre>
+    <div class="callout"><div class="callout-label">Result</div>System state backup completed successfully, covering AD database, SYSVOL, and registry.</div>
+
+    <h3 class="sub-title">3.9 AES Encryption</h3>
+    <p>Legacy RC4 Kerberos encryption was replaced with modern AES encryption:</p>
+    <pre><span class="comment"># Enable AES for all user accounts</span>
+Get-ADUser -Filter {Enabled -eq $true} | Set-ADUser -KerberosEncryptionType AES128,AES256
+
+<span class="comment"># Enable AES for krbtgt account</span>
+Set-ADUser -Identity krbtgt -KerberosEncryptionType AES128,AES256</pre>
+    <div class="callout"><div class="callout-label">Result</div>All Kerberos tickets now use AES256 encryption, eliminating RC4 downgrade attack vectors.</div>
+  </section>
+
+  <!-- ── SECTION 4 ─────────────────────────────────────────────── -->
+  <section id="s4">
+    <div class="section-label">Section 04</div>
+    <h2 class="section-title">Phase 3 — LAPS Implementation</h2>
+    <p>Windows LAPS (Local Administrator Password Solution) is built into Windows Server 2025. It automatically manages and rotates local administrator passwords on domain-joined computers, eliminating the risk of password reuse attacks.</p>
+
+    <h3 class="sub-title">4.1 LAPS Schema Extension</h3>
+    <p>AD Schema was extended with LAPS attributes:</p>
+    <pre><span class="comment"># Add Schema Admins temporarily for schema modification</span>
+Add-ADGroupMember -Identity 'Schema Admins' -Members 'SecAdmin'
+
+<span class="comment"># Extend schema with LAPS attributes</span>
+Update-LapsADSchema -Verbose</pre>
+    <p>Schema attributes added:</p>
+    <ul>
+      <li>ms-LAPS-Password</li>
+      <li>ms-LAPS-PasswordExpirationTime</li>
+      <li>ms-LAPS-EncryptedPassword</li>
+      <li>ms-LAPS-EncryptedPasswordHistory</li>
+      <li>ms-LAPS-EncryptedDSRMPassword</li>
+    </ul>
+    <pre><span class="comment"># Remove from Schema Admins immediately after</span>
+Remove-ADGroupMember -Identity 'Schema Admins' -Members 'SecAdmin' -Confirm:$false</pre>
+
+    <h3 class="sub-title">4.2 LAPS Computer Permissions</h3>
+    <pre>Set-LapsADComputerSelfPermission -Identity 'DC=ADForest,DC=local'</pre>
+    <div class="callout"><div class="callout-label">Result</div>Computers can now update their own LAPS password attribute in AD.</div>
+
+    <h3 class="sub-title">4.3 LAPS GPO Configuration</h3>
+    <pre>New-GPO -Name 'LAPS Policy' | New-GPLink -Target 'DC=ADForest,DC=local'
+
+<span class="comment"># Backup passwords to Active Directory</span>
+Set-GPRegistryValue -Name 'LAPS Policy' -Key 'HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\LAPS' -ValueName 'BackupDirectory' -Type DWord -Value 2
+
+<span class="comment"># Password age 30 days, minimum length 16 characters</span>
+Set-GPRegistryValue -Name 'LAPS Policy' -Key 'HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\LAPS' -ValueName 'PasswordAgeDays' -Type DWord -Value 30
+Set-GPRegistryValue -Name 'LAPS Policy' -Key 'HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\LAPS' -ValueName 'PasswordLength' -Type DWord -Value 16</pre>
+    <div class="callout"><div class="callout-label">Impact</div>A-LAPS-Not-Installed finding resolved. PingCastle score reduced by 15 points.</div>
+  </section>
+
+  <!-- ── SECTION 5 ─────────────────────────────────────────────── -->
+  <section id="s5">
+    <div class="section-label">Section 05</div>
+    <h2 class="section-title">Phase 4 — Privileged Account Management</h2>
+
+    <h3 class="sub-title">5.1 SecAdmin Account Creation</h3>
+    <p>A dedicated administrative account was created following the principle of least privilege. The built-in Administrator account (RID-500) is a well-known attack target — creating a separate admin account reduces this risk:</p>
+    <pre>New-ADUser -Name 'SecAdmin' -SamAccountName 'SecAdmin' -UserPrincipalName 'SecAdmin@ADForest.local' `
+  -AccountPassword (ConvertTo-SecureString 'SecureP@ss123!' -AsPlainText -Force) `
+  -Enabled $true -PasswordNeverExpires $false
+
+Add-ADGroupMember -Identity 'Domain Admins' -Members 'SecAdmin'
+
+<span class="comment"># Mark as sensitive - cannot be delegated</span>
+Set-ADUser -Identity SecAdmin -AccountNotDelegated $true</pre>
+
+    <h3 class="sub-title">5.2 BreakGlass Account (Emergency Recovery)</h3>
+    <p>The built-in Administrator account was renamed to BreakGlass and disabled. This follows defence-in-depth principles — attackers expect 'Administrator' but find 'BreakGlass' disabled:</p>
+    <pre><span class="comment"># Rename Administrator to BreakGlass</span>
+Rename-ADObject -Identity (Get-ADUser Administrator).DistinguishedName -NewName 'BreakGlass'
+
+<span class="comment"># Disable the account</span>
+Disable-ADAccount -Identity 'CN=BreakGlass,CN=Users,DC=ADForest,DC=local'
+
+<span class="comment"># Set complex emergency password</span>
+Set-ADAccountPassword -Identity 'CN=BreakGlass,CN=Users,DC=ADForest,DC=local' `
+  -NewPassword (ConvertTo-SecureString 'Xk9#mP2$vL5@nQ8!' -AsPlainText -Force) -Reset</pre>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Account</th><th>Purpose</th><th>Status</th><th>Usage</th></tr></thead>
+        <tbody>
+          <tr><td>SecAdmin</td><td>Daily administration</td><td style="color:var(--accent2)">Enabled</td><td>All routine admin tasks</td></tr>
+          <tr><td>BreakGlass (was Administrator)</td><td>Emergency recovery only</td><td style="color:var(--warn)">Disabled</td><td>Only when SecAdmin fails</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info"><div class="callout-label">Security Principles</div>Least Privilege · Defence in Depth · Security by Obscurity. The BreakGlass account password is stored securely offline.</div>
+  </section>
+
+  <!-- ── SECTION 6 ─────────────────────────────────────────────── -->
+  <section id="s6">
+    <div class="section-label">Section 06</div>
+    <h2 class="section-title">Phase 5 — Splunk SIEM Integration</h2>
+    <p>Splunk Enterprise 10.2 was deployed as the SIEM solution. Despite being the free version (500 MB/day ingestion limit), it provides full SIEM functionality for the homelab environment.</p>
+
+    <h3 class="sub-title">6.1 Splunk Configuration</h3>
+    <p>Windows Event Log collection was configured via inputs.conf (GUI editing restricted in free version):</p>
+    <pre>[WinEventLog://Security]
+index = wineventlog
+disabled = false
+start_from = oldest
+current_only = 1
+renderXml = false
+
+[WinEventLog://System]
+index = wineventlog
+disabled = false
+current_only = 1
+
+[WinEventLog://Application]
+index = wineventlog
+disabled = false
+current_only = 1
+
+[WinEventLog://Microsoft-Windows-Sysmon/Operational]
+index = wineventlog
+disabled = false
+current_only = 1
+renderXml = true
+whitelist = 1,3,8,10,11,12,13,22</pre>
+
+    <h3 class="sub-title">6.2 Sysmon Integration</h3>
+    <p>Sysmon (System Monitor) v15.15 was installed and integrated with Splunk for deep endpoint visibility. Key challenge: Splunk returned errorCode=5 (Access Denied) when accessing Sysmon logs.</p>
+    <p>Resolution — Splunk service configured to run as LocalSystem:</p>
+    <pre>sc.exe config Splunkd obj= 'LocalSystem'</pre>
+    <p>Splunk Add-on for Sysmon (TA-microsoft-sysmon v5.0.0) was installed to enable proper field extraction and sourcetype recognition.</p>
+
+    <h3 class="sub-title">6.3 Data Collection Results</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Sourcetype</th><th>Daily Volume</th><th>Events</th></tr></thead>
+        <tbody>
+          <tr><td>WinEventLog:Security</td><td>~176 MB</td><td>Failed logons, privilege use, group changes</td></tr>
+          <tr><td>xmlwineventlog (Sysmon)</td><td>~76 MB filtered</td><td>Process creation, network connections, registry</td></tr>
+          <tr><td>WinEventLog:System</td><td>~0.17 MB</td><td>System events, service starts/stops</td></tr>
+          <tr><td>WinEventLog:Application</td><td>~0.10 MB</td><td>Application events</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info"><div class="callout-label">Note</div>Total daily ingestion: ~253 MB — well within the 500 MB free version limit. Sysmon filtered to critical event IDs: 1, 3, 8, 10, 11, 12, 13, 22.</div>
+
+    <h3 class="sub-title">6.4 Key Security Searches</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Search Purpose</th><th>SPL Query</th></tr></thead>
+        <tbody>
+          <tr><td>Failed Logon Attempts</td><td><code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">index=wineventlog EventCode=4625 | stats count by Account_Name | sort -count</code></td></tr>
+          <tr><td>Top Event Codes</td><td><code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">index=wineventlog | stats count by EventCode | sort -count | head 10</code></td></tr>
+          <tr><td>Sysmon Process Creation</td><td><code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">index=wineventlog sourcetype=xmlwineventlog | stats count by Image | sort -count | head 10</code></td></tr>
+          <tr><td>Logon Activity</td><td><code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">index=wineventlog EventCode=4624 | stats count by Account_Name | sort -count</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-title">6.5 Splunk Dashboards Created</h3>
+    <ul>
+      <li>AD Security Overview — Top Event Codes bar chart</li>
+      <li>FailedLogonMonitor — Failed logons by account</li>
+      <li>SysmonProcessMonitor — Top processes from Sysmon</li>
+      <li>LogonActivityMonitor — Successful logon tracking</li>
+    </ul>
+  </section>
+
+  <!-- ── SECTION 7 ─────────────────────────────────────────────── -->
+  <section id="s7">
+    <div class="section-label">Section 07</div>
+    <h2 class="section-title">Phase 6 — BloodHound CE Attack Path Analysis</h2>
+    <p>BloodHound Community Edition was deployed to visualize Active Directory attack paths — a critical tool for both offensive security (red team) and defensive security (blue team) operations.</p>
+
+    <h3 class="sub-title">7.1 Infrastructure</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Component</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr><td>Platform</td><td>WSL2 Ubuntu 24.04 LTS on Windows Server 2025</td></tr>
+          <tr><td>Container Runtime</td><td>Docker Engine 29.3.0</td></tr>
+          <tr><td>BloodHound Version</td><td>Latest (SpecterOps)</td></tr>
+          <tr><td>Database</td><td>Neo4j 4.4.42 + PostgreSQL 16</td></tr>
+          <tr><td>Access URL</td><td>http://127.0.0.1:8080</td></tr>
+          <tr><td>Collector</td><td>SharpHound v2.10.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-title">7.2 Deployment Process</h3>
+    <p>Key challenge: Docker Desktop does not support Windows Server. Solution: WSL2 with Docker Engine on Ubuntu.</p>
+    <pre><span class="comment"># Install WSL2 and Ubuntu</span>
+wsl.exe --install
+
+<span class="comment"># Install Docker Engine on Ubuntu</span>
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+<span class="comment"># Deploy BloodHound CE</span>
+wget -O docker-compose.yml 'https://raw.githubusercontent.com/SpecterOps/BloodHound/main/examples/docker-compose/docker-compose.yml'
+docker compose up -d</pre>
+
+    <h3 class="sub-title">7.3 SharpHound Data Collection</h3>
+    <pre><span class="comment"># Disable Defender temporarily</span>
+Set-MpPreference -DisableRealtimeMonitoring $true
+
+<span class="comment"># Run SharpHound collection</span>
+.\SharpHound.exe -c All --domain ADForest.local</pre>
+    <div class="callout"><div class="callout-label">Result</div>328 AD objects enumerated including users, groups, computers, GPOs, ACLs, and trust relationships.</div>
+
+    <h3 class="sub-title">7.4 Saved BloodHound Queries</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Query Name</th><th>Cypher Query</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Domain Admin Members</td>
+            <td><code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">MATCH (u)-[:MemberOf]->(g:Group {name:'DOMAIN ADMINS@ADFOREST.LOCAL'}) RETURN u,g</code></td>
+            <td>List all DA members</td>
+          </tr>
+          <tr>
+            <td>DCSync Rights Check</td>
+            <td><code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">MATCH p=(n)-[:DCSync]->(d:Domain) RETURN p</code></td>
+            <td>Find DCSync privileges</td>
+          </tr>
+          <tr>
+            <td>Kerberoastable Accounts</td>
+            <td><code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">MATCH (u:User {hasspn:true}) RETURN u</code></td>
+            <td>Find SPN accounts</td>
+          </tr>
+          <tr>
+            <td>Shortest Path to DA</td>
+            <td><code style="font-family:var(--mono);font-size:11px;color:var(--accent2)">PATHFINDING: Any → Domain Admins</code></td>
+            <td>Attack path visualization</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info"><div class="callout-label">Note</div>These queries are saved in BloodHound CE for reuse across future assessments and demonstrate proficiency in Cypher query language.</div>
+  </section>
+
+  <!-- ── SECTION 8 ─────────────────────────────────────────────── -->
+  <section id="s8">
+    <div class="section-label">Section 08</div>
+    <h2 class="section-title">Challenges &amp; Resolutions</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Challenge</th><th>Root Cause</th><th>Resolution</th></tr></thead>
+        <tbody>
+          <tr><td>Splunk errorCode=5 for Sysmon</td><td>Splunk service lacked permission to read Sysmon event log</td><td>Changed Splunk service to run as LocalSystem via sc.exe config</td></tr>
+          <tr><td>Sysmon Add-on not loading</td><td>Triple-nested folder structure after extraction</td><td>Used robocopy to copy correct inner folder to Splunk apps directory</td></tr>
+          <tr><td>Docker Desktop on Windows Server</td><td>Docker Desktop requires Windows 10/11 desktop OS</td><td>Installed WSL2 + Ubuntu + Docker Engine as alternative</td></tr>
+          <tr><td>BloodHound CLI 404 error</td><td>v8.7.0 does not include Linux CLI binary</td><td>Used docker-compose method (official recommended approach)</td></tr>
+          <tr><td>Schema update access denied</td><td>Schema Admin group membership requires new login session</td><td>Restarted Windows Server to refresh Kerberos token</td></tr>
+          <tr><td>PingCastle score increased after fixes</td><td>SecAdmin left in Schema Admins after LAPS update</td><td>Removed SecAdmin from Schema Admins — best practice</td></tr>
+          <tr><td>Splunk Smart Mode hiding results</td><td>Stats queries show in Statistics tab, not Events tab</td><td>Clicked Statistics tab to view results</td></tr>
+          <tr><td>SharpHound blocked by Defender</td><td>Windows Defender flags SharpHound as security tool</td><td>Temporarily disabled real-time monitoring during download</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SECTION 9 ─────────────────────────────────────────────── -->
+  <section id="s9">
+    <div class="section-label">Section 09</div>
+    <h2 class="section-title">Planned Enhancements</h2>
+
+    <h3 class="sub-title">9.1 TopTon Security Gateway (In Progress)</h3>
+    <p>A TopTon mini PC (Intel N150, 33 GB DDR5) is being configured as an inline security gateway:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Interface</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>ETH0</td><td>WAN — Incoming internet cable</td></tr>
+          <tr><td>ETH1</td><td>LAN — WiFi router (home network)</td></tr>
+          <tr><td>ETH2</td><td>Homelab — Windows Server 2025</td></tr>
+          <tr><td>ETH3</td><td>Management / spare</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Software stack:</p>
+    <ul>
+      <li>Rocky Linux 9 — Base OS</li>
+      <li>Suricata — Inline IPS (active threat blocking)</li>
+      <li>OpenVPN — Secure remote access</li>
+    </ul>
+
+    <h3 class="sub-title">9.2 Additional Planned Items</h3>
+    <ul>
+      <li>BadBlood — Realistic AD test data population</li>
+      <li>Network architecture diagram (draw.io)</li>
+      <li>Wazuh SIEM — Open source alternative / complement to Splunk</li>
+      <li>MITRE ATT&amp;CK framework mapping</li>
+      <li>Incident response playbook</li>
+      <li>Attack simulation and detection validation</li>
+    </ul>
+  </section>
+
+  <!-- ── SECTION 10 ────────────────────────────────────────────── -->
+  <section id="s10">
+    <div class="section-label">Section 10</div>
+    <h2 class="section-title">Skills Demonstrated</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Skill Area</th><th>Tools / Technologies</th></tr></thead>
+        <tbody>
+          <tr><td>Active Directory Administration</td><td>Windows Server 2025, PowerShell, ADUC</td></tr>
+          <tr><td>Security Assessment</td><td>PingCastle, BloodHound CE, SharpHound</td></tr>
+          <tr><td>SIEM Administration</td><td>Splunk Enterprise, SPL queries, Dashboards</td></tr>
+          <tr><td>Endpoint Detection</td><td>Sysmon, Splunk Add-on for Sysmon</td></tr>
+          <tr><td>Identity Management</td><td>LAPS, GPO, Privileged Account Management</td></tr>
+          <tr><td>Containerisation</td><td>Docker Engine, WSL2, docker-compose</td></tr>
+          <tr><td>Linux Administration</td><td>Ubuntu, Rocky Linux, bash</td></tr>
+          <tr><td>Network Security</td><td>Suricata, TAP monitoring</td></tr>
+          <tr><td>Scripting</td><td>PowerShell, Bash</td></tr>
+          <tr><td>Documentation</td><td>GitHub, Portfolio writing</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>END OF PORTFOLIO DOCUMENT</span>
+  <span>Arturs Kaufmanis · 2026</span>
+</footer>
+
+</body>
+</html>
