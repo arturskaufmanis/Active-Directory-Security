@@ -10,7 +10,7 @@ Manchester Metropolitan University · 2026
 ![Docker](https://img.shields.io/badge/Docker-WSL2-2496ED?style=flat&logo=docker&logoColor=white)
 
 ---
-
+[ hyperlynk to full overview] (https://raw.githubusercontent.com/arturskaufmanis/Active-Directory-Security/refs/heads/main/AD_Security_Homelab_Portfolio.xml)
 ## Overview
 
 This portfolio documents the design, implementation, and security hardening of a comprehensive Active Directory homelab environment. The project demonstrates enterprise-level cybersecurity skills including SIEM integration, attack path analysis, identity management, and security monitoring.
