@@ -9,7 +9,7 @@ Manchester Metropolitan University
 ![Sysmon](https://img.shields.io/badge/Sysmon-v15.15-blue?style=flat)
 ![Docker](https://img.shields.io/badge/Docker-WSL2-2496ED?style=flat&logo=docker&logoColor=white)
 
-[ an image from the process, more discover in a folder] (https://arturskaufmanis.github.io/Active-Directory-Security/· 2026PingCastle/ad_hc_adforest.local_PingCastle.pdf)
+[ an image from the process, more discover in a folder] (https://arturskaufmanis.github.io/Active-Directory-Security/PingCastle/ad_hc_adforest.local_PingCastle.pdf)
 ---
 [ hyperlynk to full overview] (https://arturskaufmanis.github.io/Active-Directory-Security/AD_Security_Homelab_Portfolio.html)
 ## Overview
