@@ -2,12 +2,13 @@
 
 **Arturs Kaufmanis** | Cybersecurity Professional | HyperionDev Bootcamp Graduate  
 Manchester Metropolitan University 
-(
+
 ![Windows Server 2025](https://img.shields.io/badge/Windows_Server-2025-0078D6?style=flat&logo=windows)
 ![Splunk](https://img.shields.io/badge/Splunk-Enterprise_10.2-000000?style=flat&logo=splunk&logoColor=white)
 ![BloodHound](https://img.shields.io/badge/BloodHound-CE-red?style=flat)
 ![Sysmon](https://img.shields.io/badge/Sysmon-v15.15-blue?style=flat)
 ![Docker](https://img.shields.io/badge/Docker-WSL2-2496ED?style=flat&logo=docker&logoColor=white)
+
 [ an image from the process, more discover in a folder] (https://arturskaufmanis.github.io/Active-Directory-Security/· 2026PingCastle/ad_hc_adforest.local_PingCastle.pdf)
 ---
 [ hyperlynk to full overview] (https://arturskaufmanis.github.io/Active-Directory-Security/AD_Security_Homelab_Portfolio.html)
