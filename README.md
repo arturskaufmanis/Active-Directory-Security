@@ -1,8 +1,8 @@
 # Active Directory Security Homelab Portfolio
 
 **Arturs Kaufmanis** | Cybersecurity Professional | HyperionDev Bootcamp Graduate  
-Manchester Metropolitan University · 2026
-
+Manchester Metropolitan University 
+[ an image from the process, more discover in a folder] (· 2026PingCastle/ad_hc_adforest.local_PingCastle.pdf)
 ![Windows Server 2025](https://img.shields.io/badge/Windows_Server-2025-0078D6?style=flat&logo=windows)
 ![Splunk](https://img.shields.io/badge/Splunk-Enterprise_10.2-000000?style=flat&logo=splunk&logoColor=white)
 ![BloodHound](https://img.shields.io/badge/BloodHound-CE-red?style=flat)
